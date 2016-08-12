@@ -1,0 +1,17 @@
+---
+# tasks file for provision
+
+- name: Update the system
+  apt: update_cache=yes
+
+- name: Install mysqldb
+  apt: name=python-mysqldb state=present
+
+- name: Install aws cli
+  apt: name=awscli state=present
+
+- name: Add locale language to the server
+  template: src=bash_profile dest={{ ansible_env.PWD }}/.bash_profile
+
+- name: Mysql Utilities
+  apt: name=mysql-utilities state=present
