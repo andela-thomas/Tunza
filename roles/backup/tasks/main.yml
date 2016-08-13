@@ -1,0 +1,19 @@
+---
+- name: install pip
+  apt: name=python-pip state=present
+  tags:
+    - install_pip
+
+- name: install boto sdk
+  pip: name=boto
+  tags:
+    - install_boto
+
+- name: Create s3 bucket that  will hold the buckup database
+  s3_bucket:
+    name: "{{ AWS_S3_BUCKET_NAME }}"
+    aws_access_key: "{{ AWS_ACCESS_KEY_ID }}"
+    aws_secret_key: "{{ AWS_SECRET_ACCESS_KEY}}"
+    region: "{{ AWS_REGION }}"
+  tags:
+    - create_s3_bucket

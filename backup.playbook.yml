@@ -1,0 +1,9 @@
+---
+- hosts: tunza
+  user: ubuntu
+  become: yes
+  become_method: sudo
+  vars_files:
+    - credentials.yml
+  roles:
+    - mysql
