@@ -17,3 +17,22 @@
     region: "{{ AWS_REGION }}"
   tags:
     - create_s3_bucket
+
+- name: Build backup bash script
+  template:
+    src=backup.sh.j2
+    dest={{ ansible_env.PWD }}/backup.sh
+    mode=0755
+    owner=ubuntu
+  tags:
+   - build_script
+
+- name: Create a cron job to run the script on  host machine
+  cron:
+    name: "Backup Mysql database daily"
+    special_time: daily
+    user: ubuntu
+    job: "{{ ansible_env.PWD }}/backup.sh"
+    state: present
+  tags:
+    - cron_job

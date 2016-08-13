@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+set -ex
+
+TIME=`date +%Y-%m-%d-%H-%M`
+DUMP_NAME="{{PROD_DATABASE_NAME}}.${TIME}.sql"
+
+# run mysql dumo to get the database BACKUP
+
+function restore_and_compare() {
+
+  mysql -u root -p{{ ADMIN_USER_PASSWORD }} -v < "${DUMP_NAME}"
+
+  if [[ "$?" -ne "0" ]]; then
+    echo "Restore failed, please check if the dump is valid"
+    exit 1
+  fi
+
+  # compare if the databases ok
+  mysqldbcompare --server1=root:{{ ADMIN_USER_PASSWORD }}@localhost --server2=root:{{ PROD_ADMIN_USER_PASSWORD }}@{{ PROD_HOST }} {{ PROD_DATABASE_NAME }}:{{ PROD_DATABASE_NAME }} --run-all-tests
+
+}
+
+function store_to_s3_bucket() {
+  BUCKET_NAME="{{ AWS_S3_BUCKET_NAME }}"
+  gzip "${DUMP_NAME}"
+  aws s3 mv "${DUMP_NAME}"* "s3://${BUCKET_NAME}"
+  if [[ "$?" -eq "0" ]]; then
+    echo "The database ${DUMP_NAME} has been bucked up in aws ${BUCKET_NAME} bucket"
+  else
+    echo "BACKUP to s3 failed"
+    exit 1
+  fi
+}
+
+
+# Make buckup of the
+
+
+mysqldump -h {{ PROD_HOST }} -u root -p{{ PROD_ADMIN_USER_PASSWORD }} --databases {{ PROD_DATABASE_NAME }} > "${DUMP_NAME}"
+
+if [ "$?" -ne "0" ];  then
+  echo "Back up failed"
+  exit 1
+fi
+
+restore_and_compare
+
+if [[ "$?" -ne "0" ]]; then
+  echo "BACK COMAPRISON FAILED"
+fi
+
+store_to_s3_bucket
