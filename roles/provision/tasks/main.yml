@@ -3,15 +3,33 @@
 
 - name: Update the system
   apt: update_cache=yes
+  tags:
+    - provision
 
 - name: Install mysqldb
   apt: name=python-mysqldb state=present
-
-- name: Install aws cli
-  apt: name=awscli state=present
+  tags:
+    - python-mysqldb
 
 - name: Add locale language to the server
   template: src=bash_profile dest={{ ansible_env.PWD }}/.bash_profile
+  register: export_lang
+
+- name: Install aws cli
+  apt: name=awscli state=present
+  register: aws_cli
+  when: export_lang|success
+
+- name: Create the aws configuration folder
+  command: bash -c "mkdir .aws"
+  ignore_errors: True
+  tags:
+    - create_folder
+
+- name: Add aws configuration
+  template: src=config.j2 dest=.aws/config mode=0755
+  tags:
+    - config_cli
 
 - name: Mysql Utilities
   apt: name=mysql-utilities state=present
