@@ -50,7 +50,7 @@ $ ansible-playbook backup.playbook.yml # this will configure you server to act a
 
 You can modify the backup.sh.j2 in the backup role to fit your specific need.
 
-Testing
+# Testing
 
 This exercise follows the TDD practice.to run tests
 
@@ -63,17 +63,5 @@ $ cucumber
 
 Happy tinkering
 
-
-Run ansible-playbook playbook.backup.yml -i prod_inventory.ini to set up automatic backup for mysql database to.
-Testing locally
-
-Setup
-
-Run vagrant up. This will bring up a virtual machine and also provision it.
-Create a file called secret_vars.yml, copying the contents of secret_vars.example.yml. Replace the values in the file with yours.
-Update the variables in vars.yml file with yours. Note that host_user should be changed to vagrant and not ubuntu for testing locally.
-Run tests
-
-Run cucumber features/backup.feature to run tests and set up the virtual machine.
 
 
