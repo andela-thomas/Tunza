@@ -1,5 +1,5 @@
 - name: mysql-start
-  service: name=mysql start=started
+  service: name=mysql state=started
 
 - name: mysql-restart
   service: name=mysql state=restarted

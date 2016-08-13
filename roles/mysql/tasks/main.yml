@@ -5,15 +5,17 @@
   shell: "[ -f /usr/sbin/mysqld ]"
   ignore_errors: True
   register: mysqld_exists
+  tags:
+    - check_install
 
 # 2) Preseed install options
-- name: Push preseed file for debconf
+- name: Push seed file for debconf
   template:
     src=mysql_seed.j2
     dest=/root/mysql.seed
   when: mysqld_exists|failed
   tags:
-    - seeed_debconf
+    - seed_debconf
 
 - name: Preseed mysql file
   command: /usr/bin/debconf-set-selections /root/mysql.seed
@@ -48,7 +50,7 @@
 - name: Set my.cnf template
   template:
     src=my.cnf.j2
-    dest=/etc/mysql/.my.cnf
+    dest=/etc/mysql/my.cnf
     owner=root mode=0644
   notify:
   - mysql-restart
