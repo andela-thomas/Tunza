@@ -1,0 +1,98 @@
+---
+# Install server using a preseed file to set the root password
+# 1) Check is MySQL Server is already installed. If so, do not set preseed file
+- name: Check for previous installation
+  shell: "[ -f /usr/sbin/mysqld ]"
+  ignore_errors: True
+  register: mysqld_exists
+
+# 2) Preseed install options
+- name: Push preseed file for debconf
+  template:
+    src=mysql_seed.j2
+    dest=/root/mysql.seed
+  when: mysqld_exists|failed
+  tags:
+    - seeed_debconf
+
+- name: Preseed mysql file
+  command: /usr/bin/debconf-set-selections /root/mysql.seed
+  when: mysqld_exists|failed
+  tags:
+    - seed_mysql_file
+
+# 3) Install
+- name: Install MySql server
+  apt:
+    name=mysql-server
+    state=present
+    force=yes
+  when: mysqld_exists|failed
+  notify:
+  - mysql-start
+  tags:
+    - install_mysql
+
+# 4) Cleanup
+- name: Delete mysql.seed file
+  file:
+    path=/root/mysql.seed
+    state=absent
+  when: mysqld_exists|failed
+  tags:
+    - delete_seeds
+
+
+
+# Push configuration files
+- name: Set my.cnf template
+  template:
+    src=my.cnf.j2
+    dest=/etc/mysql/.my.cnf
+    owner=root mode=0644
+  notify:
+  - mysql-restart
+  tags:
+    - set_cnf
+
+# Secure installation
+- name: Ensure python mysql is installed
+  apt:
+    name=python-mysqldb
+    state=present
+    force=yes
+  tags:
+    - mysqldb
+
+- name: Remove empty password users for localhost
+  mysql_user:
+    name=''
+    password=''
+    host=localhost
+    priv=*.*:USAGE
+    state=absent
+    login_user=root
+    login_password={{ ADMIN_USER_PASSWORD }}
+  tags:
+    - remove_empty_pass1
+
+- name: Remove empty password users for {{ ansible_fqdn }}
+  mysql_user:
+    name=''
+    password=''
+    host={{ ansible_fqdn }}
+    priv=*.*:USAGE
+    state=absent
+    login_user=root
+    login_password={{ ADMIN_USER_PASSWORD }}
+  tags:
+    - remove_empty_pass2
+
+- name: Remove the MySQL test database
+  mysql_db:
+    db=test
+    state=absent
+    login_user=root
+    login_password={{ ADMIN_USER_PASSWORD }}
+  tags:
+    - remote_test_database
